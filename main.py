@@ -1,13 +1,25 @@
 from fastapi import FastAPI
+from app.db.database import engine, Base
+from app.routers import user_router, category_router, activity_router, remainder_router
+from fastapi.middleware.cors import CORSMiddleware
 
+# Crear la instancia de FastAPI
 app = FastAPI()
 
+# Configuración de CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
 
-@app.get("/")
-def read_root():
-    return {"message": "¡Bienvenido a la API!"}
+# Crear tablas en la base de datos
+Base.metadata.create_all(bind=engine)
 
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "q": q}
+# Incluir routers
+app.include_router(user_router.router, prefix="/usuarios", tags=["Usuarios"])
+app.include_router(category_router.router, prefix="/categorias", tags=["Categorias"])
+app.include_router(activity_router.router, prefix="/actividades", tags=["Actividades"])
+app.include_router(remainder_router.router, prefix="/recordatorios", tags=["Recordatorios"])
