@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.usuario_model import Usuario
 from app.models.familia_model import Familia
 from app.schemas.usuario_schema import UsuarioCreate
-from app.utils.jwt_utils import get_password_hash
+from app.utils.jwt_utils import get_password_hash, verify_password
 from fastapi import HTTPException, status
 
 
@@ -65,3 +65,30 @@ def update_user(db: Session, user_id: int, user_data: dict):
     db.commit()
     db.refresh(user)
     return user
+
+
+def verify_user(db: Session, user_name: str, user_password: str):
+    user = db.query(Usuario).filter(Usuario.nombre == user_name).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if not verify_password(user_password, user.contrasena):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password"
+        )
+
+    user_data = {
+        "usuario_id": user.usuario_id,
+        "nombre": user.nombre,
+        "apellido_pat": user.apellido_pat,
+        "apellido_mat": user.apellido_mat,
+        "correo": user.correo,
+        "rol": user.rol,
+        "familia_id": user.familia_id
+    }
+
+    return {"message": "Login successful", "user": user_data}

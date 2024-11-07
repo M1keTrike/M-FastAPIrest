@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.usuario_schema import UsuarioCreate, Usuario
-from app.controllers.usuario_controller import create_user, get_user, get_users, delete_user, update_user, get_users_by_familia
+from app.controllers.usuario_controller import create_user, get_user, get_users, delete_user, update_user, get_users_by_familia, verify_user
 from app.db.database import get_db
 
 router = APIRouter()
@@ -10,6 +10,11 @@ router = APIRouter()
 @router.post("/register", response_model=Usuario)
 def register(user: UsuarioCreate, db: Session = Depends(get_db)):
     return create_user(db, user)
+
+
+@router.post("/login")
+def login(user_name: str, user_password: str, db: Session = Depends(get_db)):
+    return verify_user(db, user_name, user_password)
 
 
 @router.get("/{user_id}", response_model=Usuario)
