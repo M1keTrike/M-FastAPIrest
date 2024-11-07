@@ -12,3 +12,4 @@ python-multipart
 email_validator
 anyio==4.6.2.post1
 httpx==0.27.2
+bcrypt
