@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.usuario_schema import UsuarioCreate, Usuario
-from app.controllers.usuario_controller import create_user, get_user, get_users, delete_user, update_user, get_users_by_familia, verify_user
+from app.controllers.usuario_controller import create_user, get_user, get_users, delete_user, update_user, get_users_by_familia, verify_user, update_family_id
 from app.db.database import get_db
 
 router = APIRouter()
@@ -50,3 +50,8 @@ def update_user_route(user_id: int, user: UsuarioCreate, db: Session = Depends(g
 @router.delete("/{user_id}")
 def delete_user_route(user_id: int, db: Session = Depends(get_db)):
     return delete_user(db, user_id)
+
+@router.put("/{user_id}/familia", response_model=Usuario)
+def update_user_family_id(user_id: int, familia_id: int, db: Session = Depends(get_db)):
+    return update_family_id(db, user_id, familia_id)
+

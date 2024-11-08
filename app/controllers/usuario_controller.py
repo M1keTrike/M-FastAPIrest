@@ -92,3 +92,25 @@ def verify_user(db: Session, user_name: str, user_password: str):
     }
 
     return {"message": "Login successful", "user": user_data}
+
+def update_family_id(db: Session, user_id: int, familia_id: int):
+    user = get_user(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+  
+    familia = db.query(Familia).filter(Familia.id_familia == familia_id).first()
+    if not familia:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Family not found"
+        )
+
+    user.familia_id = familia_id
+    db.commit()
+    db.refresh(user)
+    return user
+
