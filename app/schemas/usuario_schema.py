@@ -11,7 +11,7 @@ class UsuarioBase(BaseModel):
     familia_id: Optional[int] = None
 
 
-class UsuarioCreate(UsuarioBase):
+class  UsuarioCreate(UsuarioBase):
     contrasena: str
 
 

@@ -3,6 +3,7 @@ from app.models.usuario_model import Usuario
 from app.models.familia_model import Familia
 from app.schemas.usuario_schema import UsuarioCreate
 from app.utils.jwt_utils import get_password_hash, verify_password
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 
 
@@ -17,10 +18,17 @@ def create_user(db: Session, user_data: UsuarioCreate):
         rol=user_data.rol,
         familia_id=user_data.familia_id
     )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    try:
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="El correo ya está registrado en el sistema."
+        )
 
 
 def get_user(db: Session, user_id: int):
@@ -93,6 +101,7 @@ def verify_user(db: Session, user_name: str, user_password: str):
 
     return {"message": "Login successful", "user": user_data}
 
+
 def update_family_id(db: Session, user_id: int, familia_id: int):
     user = get_user(db, user_id)
     if not user:
@@ -101,8 +110,8 @@ def update_family_id(db: Session, user_id: int, familia_id: int):
             detail="User not found"
         )
 
-  
-    familia = db.query(Familia).filter(Familia.id_familia == familia_id).first()
+    familia = db.query(Familia).filter(
+        Familia.id_familia == familia_id).first()
     if not familia:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -113,4 +122,3 @@ def update_family_id(db: Session, user_id: int, familia_id: int):
     db.commit()
     db.refresh(user)
     return user
-
