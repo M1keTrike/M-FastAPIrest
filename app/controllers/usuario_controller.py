@@ -75,8 +75,8 @@ def update_user(db: Session, user_id: int, user_data: dict):
     return user
 
 
-def verify_user(db: Session, user_name: str, user_password: str):
-    user = db.query(Usuario).filter(Usuario.nombre == user_name).first()
+def verify_user(db: Session, email: str, user_password: str):
+    user = db.query(Usuario).filter(Usuario.correo == email).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

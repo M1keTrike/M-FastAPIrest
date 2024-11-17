@@ -13,10 +13,10 @@ def register(user: UsuarioCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(user_name: str, user_password: str, db: Session = Depends(get_db)):
-    return verify_user(db, user_name, user_password)
+def login(email: str, user_password: str, db: Session = Depends(get_db)):
+    return verify_user(db, email, user_password)
 
-
+ 
 @router.get("/{user_id}", response_model=Usuario)
 def read_user(user_id: int, db: Session = Depends(get_db)):
     user = get_user(db, user_id)
