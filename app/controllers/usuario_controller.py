@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from app.models.usuario_model import Usuario
+from app.models.pertenece_model import Pertenece
+from app.models.familia_model import Familia
 from app.schemas.usuario_schema import UsuarioCreate
-from app.controllers.pertenece_controller import create_relationship, get_relationships_by_user
 from app.utils.jwt_utils import get_password_hash, verify_password
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
@@ -21,12 +22,22 @@ def create_user(db: Session, user_data: UsuarioCreate):
         db.commit()
         db.refresh(db_user)
 
-        if user_data.familia_id:
-            create_relationship(db, {
-                "usuario_id": db_user.usuario_id,
-                "familia_id": user_data.familia_id,
-                "rol": "miembro" 
-            })
+        # Crear relación en 'Pertenece' si 'familia_id' está presente
+        if getattr(user_data, "familia_id", None):
+            familia = db.query(Familia).filter(Familia.id_familia == user_data.familia_id).first()
+            if not familia:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Family not found"
+                )
+            db_pertenece = Pertenece(
+                usuario_id=db_user.usuario_id,
+                familia_id=user_data.familia_id,
+                rol="miembro"  # Rol por defecto
+            )
+            db.add(db_pertenece)
+            db.commit()
+            db.refresh(db_pertenece)
 
         return db_user
     except IntegrityError:
@@ -38,7 +49,13 @@ def create_user(db: Session, user_data: UsuarioCreate):
 
 
 def get_user(db: Session, user_id: int):
-    return db.query(Usuario).filter(Usuario.usuario_id == user_id).first()
+    user = db.query(Usuario).filter(Usuario.usuario_id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return user
 
 
 def get_users(db: Session):
@@ -46,11 +63,13 @@ def get_users(db: Session):
 
 
 def get_users_by_family(db: Session, familia_id: int):
-    from app.controllers.pertenece_controller import get_relationships_by_family
-
-    relationships = get_relationships_by_family(db, familia_id)
-    user_ids = [relationship.usuario_id for relationship in relationships]
-    return db.query(Usuario).filter(Usuario.usuario_id.in_(user_ids)).all()
+    # Buscar usuarios relacionados con una familia específica a través de 'Pertenece'
+    return (
+        db.query(Usuario)
+        .join(Pertenece, Usuario.usuario_id == Pertenece.usuario_id)
+        .filter(Pertenece.familia_id == familia_id)
+        .all()
+    )
 
 
 def delete_user(db: Session, user_id: int):
@@ -60,6 +79,9 @@ def delete_user(db: Session, user_id: int):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+
+    # Eliminar relaciones en 'Pertenece'
+    db.query(Pertenece).filter(Pertenece.usuario_id == user.usuario_id).delete()
 
     db.delete(user)
     db.commit()
@@ -75,19 +97,34 @@ def update_user(db: Session, user_id: int, user_data: dict):
         )
 
     if "familia_id" in user_data and user_data["familia_id"] is not None:
-        from app.controllers.pertenece_controller import create_relationship
+        familia = db.query(Familia).filter(Familia.id_familia == user_data["familia_id"]).first()
+        if not familia:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Family not found"
+            )
 
-        create_relationship(db, {
-            "usuario_id": user_id,
-            "familia_id": user_data["familia_id"],
-            "rol": "miembro"
-        })
+        # Actualizar relación en 'Pertenece'
+        pertenece = (
+            db.query(Pertenece)
+            .filter(Pertenece.usuario_id == user.usuario_id, Pertenece.familia_id == user_data["familia_id"])
+            .first()
+        )
+        if not pertenece:
+            db_pertenece = Pertenece(
+                usuario_id=user.usuario_id,
+                familia_id=user_data["familia_id"],
+                rol="miembro"  # Rol por defecto
+            )
+            db.add(db_pertenece)
+            db.commit()
+            db.refresh(db_pertenece)
 
     if "contrasena" in user_data:
         user_data["contrasena"] = get_password_hash(user_data["contrasena"])
 
     for key, value in user_data.items():
-        if key not in ["familia_id", "rol"]:
+        if key != "familia_id":  # familia_id se maneja en Pertenece
             setattr(user, key, value)
 
     db.commit()
@@ -109,7 +146,12 @@ def verify_user(db: Session, email: str, user_password: str):
             detail="Incorrect password"
         )
 
-    roles = get_relationships_by_user(db, user.usuario_id)
+    # Obtener roles y familias asociados
+    roles = (
+        db.query(Pertenece)
+        .filter(Pertenece.usuario_id == user.usuario_id)
+        .all()
+    )
 
     user_data = {
         "usuario_id": user.usuario_id,

@@ -12,8 +12,5 @@ class Usuario(Base):
     apellido_mat = Column(String(50))
     correo = Column(String(100), unique=True, nullable=False)
     contrasena = Column(String(100), nullable=False)
-    rol = Column(String(50))
-    familia_id = Column(Integer)
 
-    pertenencias = relationship(
-        "Pertenece", back_populates="usuario", cascade="all, delete-orphan")
+    pertenencias = relationship("Pertenece", back_populates="usuario", cascade="all, delete-orphan")

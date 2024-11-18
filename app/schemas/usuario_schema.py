@@ -7,16 +7,16 @@ class UsuarioBase(BaseModel):
     apellido_pat: str
     apellido_mat: str
     correo: EmailStr
-    rol: str
+    contrasena: str
     familia_id: Optional[int] = None
 
 
-class  UsuarioCreate(UsuarioBase):
-    contrasena: str
+class UsuarioCreate(UsuarioBase):
+    pass
 
 
 class Usuario(UsuarioBase):
     usuario_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
