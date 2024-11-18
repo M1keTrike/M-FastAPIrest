@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
-from app.db.database import Base
 from sqlalchemy.orm import relationship
+from app.db.database import Base
 
 
 class Familia(Base):

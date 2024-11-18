@@ -1,19 +1,18 @@
-from typing import Optional
 from pydantic import BaseModel
+from typing import Optional
 
 
-class PerteneceBase(BaseModel):
+class PerteneceCreate(BaseModel):
     usuario_id: int
-    familia_id: Optional[int] = None
+    familia_id: Optional[int]
     rol: str
 
 
-class PerteneceCreate(PerteneceBase):
-    pass
-
-
-class Pertenece(PerteneceBase):
+class PerteneceResponse(BaseModel):
     id: int
+    usuario_id: int
+    familia_id: Optional[int]
+    rol: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
