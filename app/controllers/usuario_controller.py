@@ -25,7 +25,7 @@ def create_user(db: Session, user_data: UsuarioCreate):
             create_relationship(db, {
                 "usuario_id": db_user.usuario_id,
                 "familia_id": user_data.familia_id,
-                "rol": "miembro"  # Rol por defecto
+                "rol": "miembro" 
             })
 
         return db_user
