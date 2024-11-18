@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from app.db.database import Base
 
 
@@ -13,3 +14,6 @@ class Usuario(Base):
     contrasena = Column(String(100), nullable=False)
     rol = Column(String(50))
     familia_id = Column(Integer)
+
+    pertenencias = relationship(
+        "Pertenece", back_populates="usuario", cascade="all, delete-orphan")
