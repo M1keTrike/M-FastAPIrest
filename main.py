@@ -1,8 +1,25 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import engine, Base
-from app.routers import usuario_router, familia_router, evento_router, actividad_router, recordatorio_router, notificacion_router, pertenece_router
+from app.routers import (
+    usuario_router,
+    familia_router,
+    evento_router,
+    actividad_router,
+    recordatorio_router,
+    notificacion_router,
+    pertenece_router,
+)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 Base.metadata.create_all(bind=engine)
 

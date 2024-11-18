@@ -22,9 +22,9 @@ def create_user(db: Session, user_data: UsuarioCreate):
         db.commit()
         db.refresh(db_user)
 
-        # Crear relación en 'Pertenece' si 'familia_id' está presente
         if getattr(user_data, "familia_id", None):
-            familia = db.query(Familia).filter(Familia.id_familia == user_data.familia_id).first()
+            familia = db.query(Familia).filter(
+                Familia.id_familia == user_data.familia_id).first()
             if not familia:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -33,7 +33,7 @@ def create_user(db: Session, user_data: UsuarioCreate):
             db_pertenece = Pertenece(
                 usuario_id=db_user.usuario_id,
                 familia_id=user_data.familia_id,
-                rol="miembro"  # Rol por defecto
+                rol="miembro"
             )
             db.add(db_pertenece)
             db.commit()
@@ -63,7 +63,6 @@ def get_users(db: Session):
 
 
 def get_users_by_family(db: Session, familia_id: int):
-    # Buscar usuarios relacionados con una familia específica a través de 'Pertenece'
     return (
         db.query(Usuario)
         .join(Pertenece, Usuario.usuario_id == Pertenece.usuario_id)
@@ -80,8 +79,8 @@ def delete_user(db: Session, user_id: int):
             detail="User not found"
         )
 
-    # Eliminar relaciones en 'Pertenece'
-    db.query(Pertenece).filter(Pertenece.usuario_id == user.usuario_id).delete()
+    db.query(Pertenece).filter(
+        Pertenece.usuario_id == user.usuario_id).delete()
 
     db.delete(user)
     db.commit()
@@ -97,14 +96,14 @@ def update_user(db: Session, user_id: int, user_data: dict):
         )
 
     if "familia_id" in user_data and user_data["familia_id"] is not None:
-        familia = db.query(Familia).filter(Familia.id_familia == user_data["familia_id"]).first()
+        familia = db.query(Familia).filter(
+            Familia.id_familia == user_data["familia_id"]).first()
         if not familia:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Family not found"
             )
 
-        # Actualizar relación en 'Pertenece'
         pertenece = (
             db.query(Pertenece)
             .filter(Pertenece.usuario_id == user.usuario_id, Pertenece.familia_id == user_data["familia_id"])
@@ -114,7 +113,7 @@ def update_user(db: Session, user_id: int, user_data: dict):
             db_pertenece = Pertenece(
                 usuario_id=user.usuario_id,
                 familia_id=user_data["familia_id"],
-                rol="miembro"  # Rol por defecto
+                rol="miembro"
             )
             db.add(db_pertenece)
             db.commit()
@@ -124,7 +123,7 @@ def update_user(db: Session, user_id: int, user_data: dict):
         user_data["contrasena"] = get_password_hash(user_data["contrasena"])
 
     for key, value in user_data.items():
-        if key != "familia_id":  # familia_id se maneja en Pertenece
+        if key != "familia_id":
             setattr(user, key, value)
 
     db.commit()
@@ -146,7 +145,6 @@ def verify_user(db: Session, email: str, user_password: str):
             detail="Incorrect password"
         )
 
-    # Obtener roles y familias asociados
     roles = (
         db.query(Pertenece)
         .filter(Pertenece.usuario_id == user.usuario_id)
