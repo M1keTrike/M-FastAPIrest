@@ -7,7 +7,8 @@ from app.controllers.usuario_controller import (
     get_users,
     delete_user,
     update_user,
-    verify_user
+    verify_user,
+    get_user_with_roles
 )
 from app.db.database import get_db
 
@@ -48,3 +49,9 @@ def update_user_route(user_id: int, user: UsuarioCreate, db: Session = Depends(g
 @router.delete("/{user_id}")
 def delete_user_route(user_id: int, db: Session = Depends(get_db)):
     return delete_user(db, user_id)
+
+
+@router.get("/roles/{user_id}")
+def read_user_with_roles(user_id: int, db: Session = Depends(get_db)):
+    user_data = get_user_with_roles(db, user_id)
+    return user_data
