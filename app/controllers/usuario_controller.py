@@ -161,3 +161,29 @@ def verify_user(db: Session, email: str, user_password: str):
     }
 
     return {"message": "Login successful", "user": user_data}
+
+
+def get_user_with_roles(db: Session, user_id: int):
+    user = db.query(Usuario).filter(Usuario.usuario_id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    roles = (
+        db.query(Pertenece)
+        .filter(Pertenece.usuario_id == user_id)
+        .all()
+    )
+
+    user_data = {
+        "usuario_id": user.usuario_id,
+        "nombre": user.nombre,
+        "apellido_pat": user.apellido_pat,
+        "apellido_mat": user.apellido_mat,
+        "correo": user.correo,
+        "roles": [{"familia_id": r.familia_id, "rol": r.rol} for r in roles],
+    }
+
+    return user_data
