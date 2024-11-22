@@ -7,13 +7,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql+psycopg2://myuser:mypassword@ec2-11-22-33-44.compute-1.amazonaws.com:5432/mydatabase"
+SQLALCHEMY_DATABASE_URL = (
+    os.getenv("DATABASE_URL")
+    or "postgresql+psycopg2://myuser:mypassword@planifybd.integrador.xyz:5432/mydatabase"
+)
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
 
 def get_db():
     db = SessionLocal()
