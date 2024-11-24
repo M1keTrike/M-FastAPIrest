@@ -9,7 +9,7 @@ load_dotenv()
 
 SQLALCHEMY_DATABASE_URL = (
     os.getenv("DATABASE_URL")
-    or "postgresql+psycopg2://myuser:mypassword@planifybd.integrador.xyz:5432/mydatabase"
+    or "postgresql+psycopg2://postgres:mypassword@planifybd.integrador.xyz:5432/mydatabase"
 )
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

@@ -16,6 +16,7 @@ def create_user(db: Session, user_data: UsuarioCreate):
         apellido_mat=user_data.apellido_mat,
         correo=user_data.correo,
         contrasena=hashed_password,
+        imageid=user_data.imageid
     )
     try:
         db.add(db_user)
@@ -119,11 +120,11 @@ def update_user(db: Session, user_id: int, user_data: dict):
             db.commit()
             db.refresh(db_pertenece)
 
-    if "contrasena" in user_data:
+    if "contrasena" in user_data and user_data["contrasena"]:
         user_data["contrasena"] = get_password_hash(user_data["contrasena"])
 
     for key, value in user_data.items():
-        if key != "familia_id":
+        if key != "familia_id" and value is not None:
             setattr(user, key, value)
 
     db.commit()
