@@ -30,3 +30,7 @@ def update_evento(db: Session, evento_id: int, evento_data: dict):
     db.commit()
     db.refresh(evento)
     return evento
+
+def get_eventos_by_familia_id(db: Session, familia_id: int):
+    return db.query(Evento).filter(Evento.familia_id == familia_id).all()
+
