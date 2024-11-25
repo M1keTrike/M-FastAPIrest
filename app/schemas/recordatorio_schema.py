@@ -15,7 +15,8 @@ class NotificacionBase(BaseModel):
 class NotificacionCreate(NotificacionBase):
     pass
 class NotificacionMail(NotificacionBase):
-    correo_destinatario: Optional[EmailStr] = None
+    correo_destinatario: Optional[list[EmailStr]] = None
+    
 class Notificacion(NotificacionBase):
     notificacion_id: int
 
