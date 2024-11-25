@@ -1,17 +1,23 @@
-from pydantic import BaseModel
-from datetime import time
+from pydantic import BaseModel,EmailStr
+from datetime import datetime
 from typing import Optional
 
-class RecordatorioBase(BaseModel):
+class NotificacionBase(BaseModel):
+    titulo: str
     contenido: str
-    id_familia: int
-    hora_limite: Optional[time] = None
+    fecha_hora: datetime
+    evento_id: Optional[int] = None  
+    familia_id: Optional[int] = None
+    usuario_id: int
+    categoria: str
+    
 
-class RecordatorioCreate(RecordatorioBase):
+class NotificacionCreate(NotificacionBase):
     pass
-
-class Recordatorio(RecordatorioBase):
-    recordatorio_id: int
+class NotificacionMail(NotificacionBase):
+    correo_destinatario: Optional[EmailStr] = None
+class Notificacion(NotificacionBase):
+    notificacion_id: int
 
     class Config:
         orm_mode = True
