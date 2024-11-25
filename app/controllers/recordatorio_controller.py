@@ -1,5 +1,9 @@
+from fastapi import FastAPI, BackgroundTasks
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, timedelta
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+import pytz  
 
 from app.models.recordatorio_model import Notificacion
 from app.schemas.recordatorio_schema import NotificacionCreate,NotificacionBase,NotificacionMail
@@ -10,33 +14,61 @@ import smtplib
 from email.message import EmailMessage
 from dotenv import load_dotenv
 
-
 load_dotenv()
+scheduler = BackgroundScheduler()
+scheduler.start()
 
 email_sender = os.getenv("EMAIL_SENDER")
 email_password = os.getenv("EMAIL_PASSWORD")
 
 def send_email(notificacion: NotificacionMail):
-    # Create the email message
-    em = EmailMessage()
-    em["From"] = email_sender
-    em["To"] = notificacion.correo_destinatario  # Send to the email provided in the request
-    em["Subject"] = notificacion.titulo  # Use the title as the subject
-    em.set_content(notificacion.contenido)  # The content of the email
+    """Función para enviar un correo electrónico a uno o varios destinatarios."""
+    if not notificacion.correo_destinatario:
+        raise ValueError("Se requiere al menos un destinatario para enviar el correo.")
 
+    # Configuración de conexión segura
     context = ssl.create_default_context()
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as smtp:
         smtp.login(email_sender, email_password)
-        smtp.sendmail(email_sender, notificacion.correo_destinatario, em.as_string())
+        # Enviar un correo por cada destinatario
+        for correo in notificacion.correo_destinatario:
+            # Crear un nuevo mensaje para cada destinatario
+            em = EmailMessage()
+            em["From"] = email_sender
+            em["To"] = correo
+            em["Subject"] = notificacion.titulo
+            em.set_content(notificacion.contenido)
 
-def create_notificacion(db: Session, notificacion_data: NotificacionCreate):
-    
-    db_notificacion = Notificacion(**notificacion_data.dict())
-    db.add(db_notificacion)
-    db.commit()
-    db.refresh(db_notificacion)
-    return db_notificacion
+            # Enviar el correo
+            smtp.sendmail(email_sender, correo, em.as_string())
+
+
+def program_email(notificacion: NotificacionMail, now: datetime):
+    """Programa o envía un correo inmediatamente según la fecha indicada."""
+    # Convertir la fecha de entrada a UTC (aware)
+    if not notificacion.fecha_hora.tzinfo:
+        notificacion.fecha_hora = pytz.UTC.localize(notificacion.fecha_hora)
+
+    # Asegúrate de que la fecha actual también esté en UTC
+    if not now.tzinfo:
+        now = pytz.UTC.localize(now)
+
+    delay = (notificacion.fecha_hora - now).total_seconds()
+
+    if delay > 0:
+        # Programar el correo para el futuro
+        scheduler.add_job(
+            send_email,
+            'date',
+            run_date=notificacion.fecha_hora,
+            args=[notificacion]
+        )
+        return "Correo programado exitosamente."
+    else:
+        # Enviar el correo de inmediato
+        send_email(notificacion)
+        return "La fecha ya pasó, el correo se envió de inmediato."
 
 def get_notificacion(db: Session, notificacion_id: int):
    

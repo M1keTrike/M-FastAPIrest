@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,BackgroundTasks
 from sqlalchemy.orm import Session
 from app.schemas.recordatorio_schema import NotificacionCreate, NotificacionBase,Notificacion,NotificacionMail
-from app.controllers.recordatorio_controller import send_email,create_notificacion, get_notificacion, get_notificaciones, delete_notificacion, update_notificacion,obtener_5_notificaciones_proximas, obtener_notificaciones_por_categoria_y_usuario
+from app.controllers.recordatorio_controller import send_email,program_email, get_notificacion, get_notificaciones, delete_notificacion, update_notificacion,obtener_5_notificaciones_proximas, obtener_notificaciones_por_categoria_y_usuario
+from datetime import datetime
 from app.db.database import get_db
 
 
@@ -17,9 +18,16 @@ async def send_email_route(notificacion: NotificacionMail):
     except Exception as e:
         return {"error": str(e)}
 
-@router.post("/", response_model=Notificacion)
-def create_notification(notificacion: NotificacionCreate, db: Session = Depends(get_db)):
-    return create_notificacion(db, notificacion)
+@router.post("/notificaciones/")
+async def crear_notificacion(notificacion: NotificacionMail, background_tasks: BackgroundTasks):
+    """Crea una notificación y programa o envía el correo."""
+    now = datetime.now()
+    try:
+        # Llamar al controlador para programar o enviar el correo
+        message = program_email(notificacion, now)
+        return {"message": message, "notificacion": notificacion}
+    except Exception as e:
+        return {"error": str(e)}
 
 @router.get("/{notificacion_id}", response_model=Notificacion)
 def read_notification(notificacion_id: int, db: Session = Depends(get_db)):
