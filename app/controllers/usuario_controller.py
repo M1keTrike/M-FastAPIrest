@@ -96,6 +96,7 @@ def update_user(db: Session, user_id: int, user_data: dict):
             detail="User not found"
         )
 
+    # Verificar y manejar la familia si se incluye
     if "familia_id" in user_data and user_data["familia_id"] is not None:
         familia = db.query(Familia).filter(
             Familia.id_familia == user_data["familia_id"]).first()
@@ -120,9 +121,14 @@ def update_user(db: Session, user_id: int, user_data: dict):
             db.commit()
             db.refresh(db_pertenece)
 
+    # Verificar si la contraseña ya está encriptada antes de aplicar el hash
     if "contrasena" in user_data and user_data["contrasena"]:
-        user_data["contrasena"] = get_password_hash(user_data["contrasena"])
+        # Asume bcrypt (ajusta según tu método de hash)
+        if not user_data["contrasena"].startswith("$2b$"):
+            user_data["contrasena"] = get_password_hash(
+                user_data["contrasena"])
 
+    # Actualizar los demás campos
     for key, value in user_data.items():
         if key != "familia_id" and value is not None:
             setattr(user, key, value)

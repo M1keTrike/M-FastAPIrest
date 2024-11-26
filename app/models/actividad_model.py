@@ -11,5 +11,5 @@ class Actividad(Base):
     fecha_fin = Column(Date)
     hora_fin = Column(Time)
     categoria = Column(String(50))
-    usuario_id = Column(Integer, ForeignKey("usuarios.usuario_id"))
-    familia_id = Column(Integer, ForeignKey("familias.id_familia"))
+    usuario_id = Column(Integer, ForeignKey("usuarios.usuario_id"), nullable=False)  
+
