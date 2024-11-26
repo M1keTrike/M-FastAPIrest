@@ -7,7 +7,6 @@ from app.routers import (
     evento_router,
     actividad_router,
     recordatorio_router,
-    notificacion_router,
     pertenece_router,
 )
 
@@ -32,7 +31,6 @@ app.include_router(actividad_router.router,
                    prefix="/actividades", tags=["Actividades"])
 app.include_router(recordatorio_router.router,
                    prefix="/recordatorios", tags=["Recordatorios"])
-app.include_router(notificacion_router.router,
-                   prefix="/notificaciones", tags=["Notificaciones"])
+
 app.include_router(pertenece_router.router,
                    prefix="/pertenece", tags=["Pertenece"])

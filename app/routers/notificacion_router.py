@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.notificacion_schema import NotificacionCreate, Notificacion
@@ -43,3 +44,4 @@ def update_notification(notificacion_id: int, notificacion: NotificacionCreate, 
 @router.delete("/{notificacion_id}")
 def delete_notification(notificacion_id: int, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     return delete_notificacion(db, notificacion_id)
+
