@@ -12,3 +12,4 @@ class Actividad(Base):
     hora_fin = Column(Time)
     categoria = Column(String(50))
     usuario_id = Column(Integer, ForeignKey("usuarios.usuario_id"), nullable=False)  
+
