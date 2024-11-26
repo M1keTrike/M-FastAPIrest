@@ -9,6 +9,7 @@ class ActividadBase(BaseModel):
     fecha_fin: Optional[date] = None
     hora_fin: Optional[time] = None
     categoria: Optional[str] = None
+    usuario_id: int
     familia_id: int
 
 class ActividadCreate(ActividadBase):
