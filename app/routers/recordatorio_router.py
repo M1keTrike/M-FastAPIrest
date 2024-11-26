@@ -4,11 +4,13 @@ from app.schemas.recordatorio_schema import NotificacionCreate,NotificacionRespo
 from app.controllers.recordatorio_controller import send_email,program_email, get_notificacion, get_notificaciones, delete_notificacion, update_notificacion,obtener_5_notificaciones_proximas, obtener_notificaciones_por_categoria_y_usuario
 from datetime import datetime
 from app.db.database import get_db
+from app.utils.jwt_utils import get_current_user  # Importa la función get_current_user
 
 
 
 
 router = APIRouter()
+
 
 
 @router.post("/")

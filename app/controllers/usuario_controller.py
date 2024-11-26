@@ -3,9 +3,11 @@ from app.models.usuario_model import Usuario
 from app.models.pertenece_model import Pertenece
 from app.models.familia_model import Familia
 from app.schemas.usuario_schema import UsuarioCreate
-from app.utils.jwt_utils import get_password_hash, verify_password
+from app.utils.jwt_utils import get_password_hash, verify_password, create_access_token, decode_access_token
 from sqlalchemy.exc import IntegrityError
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Request, Depends
+from app.schemas.usuario_schema import UsuarioLogin
+from app.db.database import get_db
 
 
 def create_user(db: Session, user_data: UsuarioCreate):
@@ -194,3 +196,37 @@ def get_user_with_roles(db: Session, user_id: int):
     }
 
     return user_data
+
+
+def login_user(db: Session, user_data: UsuarioLogin):
+
+    user = db.query(Usuario).filter(Usuario.correo == user_data.correo).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if not verify_password(user_data.contrasena, user.contrasena):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password"
+        )
+
+    # Aquí se generan los datos que se incluirán en el token JWT
+    user_data_for_token = {
+        "usuario_id": user.usuario_id,
+        "correo": user.correo,
+        "nombre": user.nombre,
+        "apellido_pat": user.apellido_pat,
+        "apellido_mat": user.apellido_mat,
+    }
+
+    # Crear el token JWT con los datos del usuario
+    access_token = create_access_token(data=user_data_for_token)
+
+    # Devolver el token JWT
+    return {"access_token": access_token, "token_type": "bearer", "user": user_data_for_token}
+
+
+
