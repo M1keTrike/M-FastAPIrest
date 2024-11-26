@@ -30,3 +30,7 @@ def update_actividad(db: Session, actividad_id: int, actividad_data: dict):
     db.commit()
     db.refresh(actividad)
     return actividad
+
+def get_actividades_by_user_id(db: Session, usuario_id: int):
+    return db.query(Actividad).filter(Actividad.usuario_id == usuario_id).all()
+
