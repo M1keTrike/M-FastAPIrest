@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException,BackgroundTasks
 from sqlalchemy.orm import Session
-from app.schemas.recordatorio_schema import NotificacionCreate, NotificacionBase,Notificacion,NotificacionMail
+from app.schemas.recordatorio_schema import NotificacionCreate,NotificacionResponse,NotificacionUpdate
 from app.controllers.recordatorio_controller import send_email,program_email, get_notificacion, get_notificaciones, delete_notificacion, update_notificacion,obtener_5_notificaciones_proximas, obtener_notificaciones_por_categoria_y_usuario
 from datetime import datetime
 from app.db.database import get_db
@@ -10,37 +10,29 @@ from app.db.database import get_db
 
 router = APIRouter()
 
-@router.post("/send_email/")
-async def send_email_route(notificacion: NotificacionMail):
-    try:
-        send_email(notificacion)
-        return {"message": "Email sent successfully to " + notificacion.correo_destinatario}
-    except Exception as e:
-        return {"error": str(e)}
 
-@router.post("/notificaciones/")
-async def crear_notificacion(notificacion: NotificacionMail, background_tasks: BackgroundTasks):
-    """Crea una notificación y programa o envía el correo."""
-    now = datetime.now()
-    try:
-        # Llamar al controlador para programar o enviar el correo
-        message = program_email(notificacion, now)
-        return {"message": message, "notificacion": notificacion}
-    except Exception as e:
-        return {"error": str(e)}
+@router.post("/")
+def create_notificacion(
+    notificacion: NotificacionCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    now = datetime.utcnow()  # Obtener la hora actual en UTC
+    result = program_email(notificacion, db, now)
+    return result
 
-@router.get("/{notificacion_id}", response_model=Notificacion)
+@router.get("/{notificacion_id}", response_model=NotificacionResponse)
 def read_notification(notificacion_id: int, db: Session = Depends(get_db)):
     notificacion = get_notificacion(db, notificacion_id)
     if notificacion is None:
         raise HTTPException(status_code=404, detail="Notification not found")
     return notificacion
 
-@router.get("/", response_model=list[Notificacion])
+@router.get("/", response_model=list[NotificacionResponse])
 def read_notifications(db: Session = Depends(get_db)):
     return get_notificaciones(db)
 
-@router.put("/{notificacion_id}", response_model=Notificacion)
+@router.put("/{notificacion_id}", response_model=NotificacionUpdate)
 def update_notification(notificacion_id: int, notificacion: NotificacionCreate, db: Session = Depends(get_db)):
     updated_notificacion = update_notificacion(db, notificacion_id, notificacion.dict())
     if updated_notificacion is None:
@@ -51,7 +43,7 @@ def update_notification(notificacion_id: int, notificacion: NotificacionCreate, 
 def delete_notification(notificacion_id: int, db: Session = Depends(get_db)):
     return delete_notificacion(db, notificacion_id)
 
-@router.get("/proximas/{usuario_id}", response_model=list[Notificacion])
+@router.get("/proximas/{usuario_id}", response_model=list[NotificacionResponse])
 def get_proximas_notificaciones(usuario_id: int, db: Session = Depends(get_db)):
     notificaciones = obtener_5_notificaciones_proximas(db, usuario_id)
     
@@ -59,7 +51,7 @@ def get_proximas_notificaciones(usuario_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No se encontraron notificaciones")
     
     return notificaciones
-@router.get("/categoria/{categoria}/{usuario_id}", response_model=list[Notificacion])
+@router.get("/categoria/{categoria}/{usuario_id}", response_model=list[NotificacionResponse])
 def get_notificaciones_por_categoria(categoria: str, usuario_id: int, db: Session = Depends(get_db)):
     notificaciones = obtener_notificaciones_por_categoria_y_usuario(db, categoria,usuario_id)
     if not notificaciones:

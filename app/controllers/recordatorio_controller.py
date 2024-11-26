@@ -3,10 +3,11 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 import pytz  
 
 from app.models.recordatorio_model import Notificacion
-from app.schemas.recordatorio_schema import NotificacionCreate,NotificacionBase,NotificacionMail
+from app.schemas.recordatorio_schema import NotificacionCreate
 
 import os
 import ssl
@@ -21,7 +22,7 @@ scheduler.start()
 email_sender = os.getenv("EMAIL_SENDER")
 email_password = os.getenv("EMAIL_PASSWORD")
 
-def send_email(notificacion: NotificacionMail):
+def send_email(notificacion: Notificacion):
     """Función para enviar un correo electrónico a uno o varios destinatarios."""
     if not notificacion.correo_destinatario:
         raise ValueError("Se requiere al menos un destinatario para enviar el correo.")
@@ -44,8 +45,9 @@ def send_email(notificacion: NotificacionMail):
             smtp.sendmail(email_sender, correo, em.as_string())
 
 
-def program_email(notificacion: NotificacionMail, now: datetime):
-    """Programa o envía un correo inmediatamente según la fecha indicada."""
+def program_email(notificacion: NotificacionCreate, db: Session, now: datetime):
+    """Programa o envía un correo inmediatamente y guarda la notificación en la base de datos."""
+    
     # Convertir la fecha de entrada a UTC (aware)
     if not notificacion.fecha_hora.tzinfo:
         notificacion.fecha_hora = pytz.UTC.localize(notificacion.fecha_hora)
@@ -56,19 +58,38 @@ def program_email(notificacion: NotificacionMail, now: datetime):
 
     delay = (notificacion.fecha_hora - now).total_seconds()
 
+    # Guardar la notificación en la base de datos
+    try:
+        new_notificacion = Notificacion(
+            titulo=notificacion.titulo,
+            contenido=notificacion.contenido,
+            fecha_hora=notificacion.fecha_hora,
+            evento_id=notificacion.evento_id,
+            familia_id=notificacion.familia_id,
+            usuario_id=notificacion.usuario_id,
+            categoria=notificacion.categoria,
+            correo_destinatario=notificacion.correo_destinatario
+        )
+
+        db.add(new_notificacion)
+        db.commit()  # Commit to save in the database
+        db.refresh(new_notificacion)  # Refresh to get the new ID
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error saving notification: {str(e)}")
+
     if delay > 0:
-        # Programar el correo para el futuro
         scheduler.add_job(
             send_email,
             'date',
             run_date=notificacion.fecha_hora,
-            args=[notificacion]
+            args=[new_notificacion]
         )
-        return "Correo programado exitosamente."
+        return {"message": "Correo programado exitosamente.", "notificacion_id": new_notificacion.notificacion_id}
     else:
-        # Enviar el correo de inmediato
-        send_email(notificacion)
-        return "La fecha ya pasó, el correo se envió de inmediato."
+        send_email(new_notificacion)
+        return {"message": "La fecha ya pasó, el correo se envió de inmediato.", "notificacion_id": new_notificacion.notificacion_id}
 
 def get_notificacion(db: Session, notificacion_id: int):
    

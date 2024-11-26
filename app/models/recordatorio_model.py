@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, Text, Time, ForeignKey, String, DateTime
+from sqlalchemy import Column, Integer, Text, ForeignKey, String, DateTime,JSON
+from sqlalchemy.dialects.postgresql import ARRAY
 from app.db.database import Base
 
 class Notificacion(Base):
@@ -12,4 +13,4 @@ class Notificacion(Base):
     familia_id = Column(Integer, ForeignKey("familias.id_familia"), nullable=True)  # Relación opcional con familias
     usuario_id = Column(Integer, ForeignKey("usuarios.usuario_id"), nullable=False)  # Relación opcional con usuarios
     categoria = Column(String(50),nullable=False)
-    
+    correo_destinatario = Column(JSON, nullable=True)  # Correo destinatario como lista de correos electrónicos
