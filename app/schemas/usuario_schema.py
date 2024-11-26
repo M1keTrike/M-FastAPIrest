@@ -29,5 +29,10 @@ class UsuarioUpdate(BaseModel):
 class Usuario(UsuarioBase):
     usuario_id: int
 
+
+class UsuarioLogin(BaseModel):
+    correo: str
+    contrasena: str
+
     class Config:
         from_attributes = True
